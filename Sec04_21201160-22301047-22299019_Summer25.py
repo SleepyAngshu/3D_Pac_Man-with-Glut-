@@ -4,6 +4,7 @@ from OpenGL.GLU import *
 import math
 import random
 from collections import deque
+import time
 
 # Grid constants
 CELL_SIZE = 40
@@ -15,12 +16,12 @@ POWER_PELLET_SIZE = 10
 GHOST_SIZE = 15
 PACMAN_SIZE = 15
 # Durations in milliseconds (time-based for robustness)
-POWER_MODE_MS = 5000   
-IFRAME_MS = 5000        
-RESP_IMMUNE_MS = 5000  
+POWER_MODE_MS = 5000
+IFRAME_MS = 5000
+RESP_IMMUNE_MS = 5000
 
 # Ghost movement tick (independent of player movement)
-GHOST_TICK_MS = 500  
+GHOST_TICK_MS = 500
 
 # Pac-Man movement cooldown (ms); increase to slow player.
 PACMAN_MOVE_COOLDOWN_MS = 100
@@ -32,7 +33,7 @@ last_ghost_step_ms = 0
 
 # Camera and view settings
 
-camera_mode = "2D" 
+camera_mode = "2D"
 fovY = 90
 
 
@@ -45,12 +46,12 @@ game_score = 0
 lives = 3
 
 
-power_mode_until = 0  
-iframe_until = 0        
+power_mode_until = 0
+iframe_until = 0
 
 
 # Pacman
-pacman_pos = [1, 1]  
+pacman_pos = [1, 1]
 pacman_dir = [0, 0]
 pacman_angle = 0
 pacman_mouth = 0.0
@@ -69,7 +70,7 @@ class Ghost:
         self.name = name
         self.dir = [0, 0]
         self.eaten = False
-        self.respawn_timer = 0     
+        self.respawn_timer = 0
         self.respawned_immune = False
         self.immune_until = 0
         # Per-ghost RNG to avoid converging paths
@@ -83,37 +84,37 @@ class Ghost:
         self.respawn_timer = 0
         # Immune for 5 seconds after respawn (regardless of power mode)
         self.respawned_immune = True
-        self.immune_until = glutGet(GLUT_ELAPSED_TIME) + RESP_IMMUNE_MS
+        self.immune_until = int(time.time() * 1000) + RESP_IMMUNE_MS
 
 ghosts = [
-    Ghost(9, 9, (1, 0, 0), "Blinky"),  #orginal names 
+    Ghost(9, 9, (1, 0, 0), "Blinky"),  # orginal names
     Ghost(8, 9, (1, 0.5, 0.5), "Pinky"),
     Ghost(10, 9, (0, 1, 1), "Inky"),
     Ghost(9, 8, (1, 0.5, 0), "Clyde")
 ]
 
 maze = [
-    [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1],  
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],  
-    [1,2,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,2,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
-    [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,1],
-    [1,0,0,0,0,1,1,1,0,1,0,1,1,1,0,0,0,0,1],
-    [1,1,1,1,0,1,0,0,0,0,0,0,0,1,0,1,1,1,1],
-    [1,1,1,1,0,1,0,1,3,3,3,1,0,1,0,1,1,1,1],
-    [0,0,0,0,0,0,0,1,3,3,3,1,0,0,0,0,0,0,0],
-    [1,1,1,1,0,1,0,1,3,3,3,1,0,1,0,1,1,1,1],
-    [1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1],
-    [1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
-    [1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1],
-    [1,0,1,1,0,1,0,0,0,1,0,0,0,1,0,1,1,0,1],
-    [1,0,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,0,1],
-    [1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-    [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
-    [1,2,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,2,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],  
-    [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1]   
+    [1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1],
+    [1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1],
+    [1 ,2 ,1 ,1 ,0 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,0 ,1 ,1 ,2 ,1],
+    [1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1],
+    [1 ,0 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,0 ,1],
+    [1 ,0 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,0 ,1],
+    [1 ,0 ,0 ,0 ,0 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,1],
+    [1 ,1 ,1 ,1 ,0 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,0 ,1 ,1 ,1 ,1],
+    [1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,3 ,3 ,3 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1],
+    [0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,3 ,3 ,3 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0],
+    [1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,3 ,3 ,3 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1],
+    [1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1],
+    [1 ,0 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,0 ,1],
+    [1 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,1 ,1 ,1 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,1],
+    [1 ,0 ,1 ,1 ,0 ,1 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,1 ,0 ,1 ,1 ,0 ,1],
+    [1 ,0 ,0 ,1 ,0 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,0 ,1 ,0 ,0 ,1],
+    [1 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,1],
+    [1 ,0 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,0 ,1 ,0 ,1 ,1 ,0 ,1],
+    [1 ,2 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,2 ,1],
+    [1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,1],
+    [1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,0 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1]
 ]
 
 
@@ -126,13 +127,11 @@ pellets_eaten = 0
 
 # Utility: world <-> grid
 def grid_to_world(x, y):
-    return (
-        x * CELL_SIZE - (MAZE_WIDTH * CELL_SIZE) / 2 + CELL_SIZE/2,
-        y * CELL_SIZE - (MAZE_HEIGHT * CELL_SIZE) / 2 + CELL_SIZE/2
-    )
+    return (x * CELL_SIZE - (MAZE_WIDTH * CELL_SIZE) / 2 + CELL_SIZE /2, y * CELL_SIZE - (MAZE_HEIGHT * CELL_SIZE) / 2 + CELL_SIZE /2)
 
 def now_ms():
-    return glutGet(GLUT_ELAPSED_TIME)
+    return int(time.time() * 1000)   # seconds → ms
+
 
 def power_active():
     return now_ms() < power_mode_until
@@ -141,7 +140,7 @@ def iframe_active():
     return now_ms() < iframe_until
 
 def drawWireCube(size):
-    hs = size / 2.0  
+    hs = size / 2.0
     vertices = [
         [-hs, -hs, -hs],
         [ hs, -hs, -hs],
@@ -153,9 +152,9 @@ def drawWireCube(size):
         [-hs,  hs,  hs]
     ]
     edges = [
-        (0,1),(1,2),(2,3),(3,0),  # back face
-        (4,5),(5,6),(6,7),(7,4),  # front face
-        (0,4),(1,5),(2,6),(3,7)   # connecting edges
+        (0 ,1) ,(1 ,2) ,(2 ,3) ,(3 ,0),  # back face
+        (4 ,5) ,(5 ,6) ,(6 ,7) ,(7 ,4),  # front face
+        (0 ,4) ,(1 ,5) ,(2 ,6) ,(3 ,7)   # connecting edges
     ]
     glBegin(GL_LINES)
     for e in edges:
@@ -186,12 +185,12 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 def draw_sphere(radius, slices=20, stacks=20):
     quadric = gluNewQuadric()
     gluSphere(quadric, radius, slices, stacks)
-    
+
 
 def draw_cylinder(base_radius, top_radius, height, slices=20):
     quadric = gluNewQuadric()
     gluCylinder(quadric, base_radius, top_radius, height, slices, slices)
-    
+
 
 
 def draw_pacman():
@@ -203,31 +202,42 @@ def draw_pacman():
     glTranslatef(x, y, z)
     glRotatef(pacman_angle, 0, 0, 1)
 
-    
+
     glColor3f(1, 1, 0)
 
-    
+
     mouth_angle = abs(pacman_mouth) * 30
     if mouth_angle < 5:
         draw_sphere(PACMAN_SIZE)
     else:
-        glBegin(GL_TRIANGLE_FAN)
-        glVertex3f(0, 0, 0)
-        for angle in range(int(mouth_angle), 360 - int(mouth_angle) + 1, 5):
-            rad = math.radians(angle)
-            glVertex3f(PACMAN_SIZE * math.cos(rad), PACMAN_SIZE * math.sin(rad), 0)
-        glEnd()
+        for angle in range(int(mouth_angle), 360 - int(mouth_angle), 5):
+            rad1 = math.radians(angle)
+            rad2 = math.radians(angle + 5)
+            glBegin(GL_TRIANGLES)
+            glVertex3f(0, 0, 0)
+            glVertex3f(PACMAN_SIZE * math.cos(rad1), PACMAN_SIZE * math.sin(rad1), 0)
+            glVertex3f(PACMAN_SIZE * math.cos(rad2), PACMAN_SIZE * math.sin(rad2), 0)
+            glEnd()
+
         for i in range(0, 10):
-            glBegin(GL_TRIANGLE_STRIP)
-            for angle in range(int(mouth_angle), 360 - int(mouth_angle) + 1, 10):
+            for angle in range(int(mouth_angle), 360 - int(mouth_angle), 10):
                 rad = math.radians(angle)
+                rad_next = math.radians(angle + 10)
+
                 z1 = PACMAN_SIZE * math.sin(math.radians(i * 9))
                 z2 = PACMAN_SIZE * math.sin(math.radians((i + 1) * 9))
                 r1 = PACMAN_SIZE * math.cos(math.radians(i * 9))
                 r2 = PACMAN_SIZE * math.cos(math.radians((i + 1) * 9))
+
+                glBegin(GL_TRIANGLES)
                 glVertex3f(r1 * math.cos(rad), r1 * math.sin(rad), z1)
                 glVertex3f(r2 * math.cos(rad), r2 * math.sin(rad), z2)
-            glEnd()
+                glVertex3f(r2 * math.cos(rad_next), r2 * math.sin(rad_next), z2)
+
+                glVertex3f(r1 * math.cos(rad), r1 * math.sin(rad), z1)
+                glVertex3f(r2 * math.cos(rad_next), r2 * math.sin(rad_next), z2)
+                glVertex3f(r1 * math.cos(rad_next), r1 * math.sin(rad_next), z1)
+                glEnd()
 
     glPopMatrix()
 
@@ -272,7 +282,7 @@ def draw_maze():
 
             if v == 1:  # Wall
                 glPushMatrix()
-                glTranslatef(world_x + CELL_SIZE/2, world_y + CELL_SIZE/2, WALL_HEIGHT/2)
+                glTranslatef(world_x + CELL_SIZE /2, world_y + CELL_SIZE /2, WALL_HEIGHT /2)
                 glColor3f(0.1, 0.1, 0.9)
                 glScalef(CELL_SIZE, CELL_SIZE, WALL_HEIGHT)
                 glutSolidCube(1)
@@ -281,33 +291,33 @@ def draw_maze():
                 glPopMatrix()
             elif v == 0:  # Pellet
                 glPushMatrix()
-                glTranslatef(world_x + CELL_SIZE/2, world_y + CELL_SIZE/2, PELLET_SIZE + 5)
-                glRotatef(glutGet(GLUT_ELAPSED_TIME) * 0.1, 0, 0, 1)
+                glTranslatef(world_x + CELL_SIZE /2, world_y + CELL_SIZE /2, PELLET_SIZE + 5)
+                glRotatef(int(time.time() * 1000) * 0.1, 0, 0, 1)
                 glColor3f(1, 1, 0.7)
                 draw_sphere(PELLET_SIZE)
                 glPopMatrix()
             elif v == 2:  # Power pellet
                 glPushMatrix()
-                glTranslatef(world_x + CELL_SIZE/2, world_y + CELL_SIZE/2, POWER_PELLET_SIZE + 5)
-                pulse = 1.0 + 0.2 * math.sin(glutGet(GLUT_ELAPSED_TIME) * 0.005)
+                glTranslatef(world_x + CELL_SIZE /2, world_y + CELL_SIZE /2, POWER_PELLET_SIZE + 5)
+                pulse = 1.0 + 0.2 * math.sin(int(time.time() * 1000) * 0.005)
                 glScalef(pulse, pulse, pulse)
                 glColor3f(1, 0.7, 0)
                 draw_sphere(POWER_PELLET_SIZE)
                 glPopMatrix()
             elif v == 4:  # Tunnel tiles
                 glPushMatrix()
-                glTranslatef(world_x + CELL_SIZE/2, world_y + CELL_SIZE/2, 0)
+                glTranslatef(world_x + CELL_SIZE /2, world_y + CELL_SIZE /2, 0)
                 glColor3f(0.05, 0.05, 0.05)
                 glBegin(GL_QUADS)
-                glVertex3f(-CELL_SIZE/2, -CELL_SIZE/2, 0)
-                glVertex3f(CELL_SIZE/2, -CELL_SIZE/2, 0)
-                glVertex3f(CELL_SIZE/2, CELL_SIZE/2, 0)
-                glVertex3f(-CELL_SIZE/2, CELL_SIZE/2, 0)
+                glVertex3f(-CELL_SIZE /2, -CELL_SIZE /2, 0)
+                glVertex3f(CELL_SIZE /2, -CELL_SIZE /2, 0)
+                glVertex3f(CELL_SIZE /2, CELL_SIZE /2, 0)
+                glVertex3f(-CELL_SIZE /2, CELL_SIZE /2, 0)
                 glEnd()
                 glPopMatrix()
 
     # Floor
-    glColor3f(0.05, 0.05, 0.05)
+    glColor3f(0, 0, 0)
     glBegin(GL_QUADS)
     half_w = (MAZE_WIDTH * CELL_SIZE) / 2
     half_h = (MAZE_HEIGHT * CELL_SIZE) / 2
@@ -337,13 +347,13 @@ def bfs_pathfinding(start, target, flee=False, rng=None, shuffle_dirs=False):
         for dx, dy in dirs:
             next_pos = [current[0] + dx, current[1] + dy]
 
-            
+
             if next_pos[0] < 0:
                 next_pos[0] = MAZE_WIDTH - 1
             elif next_pos[0] >= MAZE_WIDTH:
                 next_pos[0] = 0
 
-            
+
             center_x = MAZE_WIDTH // 2
             if next_pos[0] == center_x:
                 if next_pos[1] < 0:
@@ -352,14 +362,14 @@ def bfs_pathfinding(start, target, flee=False, rng=None, shuffle_dirs=False):
                     next_pos[1] = 0
 
             if (0 <= next_pos[1] < MAZE_HEIGHT and
-                maze[next_pos[1]][next_pos[0]] != 1 and
-                tuple(next_pos) not in visited):
+                    maze[next_pos[1]][next_pos[0]] != 1 and
+                    tuple(next_pos) not in visited):
 
                 visited[tuple(next_pos)] = current
                 queue.append(next_pos)
 
                 if next_pos == target:
-            
+
                     path = []
                     node = tuple(target)
                     while visited[node] is not None:
@@ -369,15 +379,15 @@ def bfs_pathfinding(start, target, flee=False, rng=None, shuffle_dirs=False):
 
                     if path:
                         if flee:
-                            return [-path[0][0], -path[0][1]]  
+                            return [-path[0][0], -path[0][1]]
                         else:
-                            return path[-1]  
+                            return path[-1]
 
     return [0, 0]
 
 
 def compute_distance_map(target_x, target_y, block_tunnels=True):
-    
+
     from collections import deque as _deque
     q = _deque()
     start = (target_x, target_y)
@@ -385,15 +395,15 @@ def compute_distance_map(target_x, target_y, block_tunnels=True):
     dist = {start: 0}
     while q:
         cx, cy = q.popleft()
-        for dx, dy in ((0,1),(0,-1),(-1,0),(1,0)):
-            nx, ny = cx+dx, cy+dy
-            
+        for dx, dy in ((0 ,1) ,(0 ,-1) ,(-1 ,0) ,(1 ,0)):
+            nx, ny = cx +dx, cy +dy
+
             if not (0 <= nx < MAZE_WIDTH and 0 <= ny < MAZE_HEIGHT):
                 continue
             v = maze[ny][nx]
-            if v == 1:  
+            if v == 1:
                 continue
-            if block_tunnels and v == 4:  
+            if block_tunnels and v == 4:
                 continue
             if (nx, ny) not in dist:
                 dist[(nx, ny)] = dist[(cx, cy)] + 1
@@ -418,7 +428,7 @@ def update_ghosts():
         flee_now = (now_ms() < power_mode_until) and not ghost.respawned_immune
 
         candidates = []
-        for dx, dy in ((0,1),(0,-1),(-1,0),(1,0)):
+        for dx, dy in ((0 ,1) ,(0 ,-1) ,(-1 ,0) ,(1 ,0)):
             nx, ny = ghost.x + dx, ghost.y + dy
             if not (0 <= nx < MAZE_WIDTH and 0 <= ny < MAZE_HEIGHT):
                 continue
@@ -427,10 +437,10 @@ def update_ghosts():
                 continue
             candidates.append((nx, ny, dx, dy))
 
-    
+
         if ghost.recent:
             prev = ghost.recent[-1]
-            non_back = [(nx,ny,dx,dy) for (nx,ny,dx,dy) in candidates if (nx,ny) != prev]
+            non_back = [(nx ,ny ,dx ,dy) for (nx ,ny ,dx ,dy) in candidates if (nx ,ny) != prev]
             if non_back:
                 candidates = non_back
 
@@ -439,19 +449,19 @@ def update_ghosts():
 
         if flee_now:
             best = None; best_val = -1e9
-            for nx,ny,dx,dy in candidates:
-                s = score((nx,ny)) + ghost.rng.random()*0.2
+            for nx ,ny ,dx ,dy in candidates:
+                s = score((nx ,ny)) + ghost.rng.random( ) *0.2
                 if s > best_val:
-                    best_val = s; best = (nx,ny,dx,dy)
+                    best_val = s; best = (nx ,ny ,dx ,dy)
         else:
             best = None; best_val = 1e9
-            for nx,ny,dx,dy in candidates:
-                s = score((nx,ny)) + ghost.rng.random()*0.2
+            for nx ,ny ,dx ,dy in candidates:
+                s = score((nx ,ny)) + ghost.rng.random( ) *0.2
                 if s < best_val:
-                    best_val = s; best = (nx,ny,dx,dy)
+                    best_val = s; best = (nx ,ny ,dx ,dy)
 
         if best is None and candidates:
-            best = candidates[int(ghost.rng.random()*len(candidates))]
+            best = candidates[int(ghost.rng.random( ) *len(candidates))]
 
         if best:
             nx, ny, dx, dy = best
@@ -461,7 +471,7 @@ def update_ghosts():
 def check_collisions():
     global game_score, pellets_eaten, power_mode_until, lives, game_over, game_won, iframe_until
 
-    
+
     px, py = pacman_pos
     x, y = int(px), int(py)
     if not (0 <= x < MAZE_WIDTH and 0 <= y < MAZE_HEIGHT):
@@ -478,10 +488,10 @@ def check_collisions():
         pellets_eaten += 1
         power_mode_until = now_ms() + POWER_MODE_MS
 
-    
+
     for ghost in ghosts:
         if not ghost.eaten and ghost.x == x and ghost.y == y:
-            
+
             if power_active() and not getattr(ghost, "respawned_immune", False):
                 ghost.eaten = True
                 ghost.respawn_timer = int(1000 / GHOST_TICK_MS * 1.5)
@@ -533,7 +543,7 @@ def rebuild_maze_pellets():
     for y in range(MAZE_HEIGHT):
         for x in range(MAZE_WIDTH):
             if maze[y][x] == 3:
-                  if maze[y][x] != 1 and maze[y][x] != 4:
+                if maze[y][x] != 1 and maze[y][x] != 4:
                     if not (8 <= x <= 10 and 8 <= y <= 10):
                         maze[y][x] = 0
     randomize_power_pellets(count=4)
@@ -542,7 +552,7 @@ def rebuild_maze_pellets():
     pellets_eaten = 0
 
 def restart_game():
-    global game_score, lives, power_mode_until, iframe_until, game_over, game_won, camera_mode 
+    global game_score, lives, power_mode_until, iframe_until, game_over, game_won, camera_mode, game_paused
     camera_mode = "2D"
     game_score = 0
     lives = 3
@@ -550,6 +560,7 @@ def restart_game():
     iframe_until = 0
     game_over = False
     game_won = False
+    game_paused = False
     rebuild_maze_pellets()
     reset_positions()
     for g in ghosts:
@@ -567,7 +578,7 @@ def animate():
         glutPostRedisplay()
         return
 
-    
+
     now = now_ms()
     while now - last_ghost_step_ms >= GHOST_TICK_MS:
         update_ghosts()
@@ -604,14 +615,14 @@ def keyboardListener(key, x, y):
     if game_paused:
         return
 
-  
+
     now = now_ms()
     if now - pacman_last_move_ms < PACMAN_MOVE_COOLDOWN_MS:
         return
 
-    
+
     if camera_mode == "2D":
-    
+
         if key == b'w':
             nx, ny = pacman_pos[0], pacman_pos[1] + 1
             pacman_angle = 90
@@ -627,19 +638,19 @@ def keyboardListener(key, x, y):
         else:
             return
     else:
-       
+
         if key == b'a':
-            
+
             pacman_angle = (pacman_angle + 90) % 360
             pacman_last_move_ms = now
             return
         elif key == b'd':
-            
+
             pacman_angle = (pacman_angle - 90) % 360
             pacman_last_move_ms = now
             return
         elif key == b'w':
-        
+
             rad = math.radians(pacman_angle)
             dx = round(math.cos(rad))
             dy = round(math.sin(rad))
@@ -652,12 +663,12 @@ def keyboardListener(key, x, y):
         else:
             return
 
-    
+
     if nx < 0:
         nx = MAZE_WIDTH - 1
     elif nx >= MAZE_WIDTH:
         nx = 0
-   
+
     center_x = MAZE_WIDTH // 2
     if nx == center_x:
         if ny < 0:
@@ -688,9 +699,9 @@ def setupCamera():
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
         pac_x, pac_y = grid_to_world(pacman_pos[0], pacman_pos[1])
-        cam_distance = 110  
-        cam_height = 88  
-        
+        cam_distance = 110
+        cam_height = 88
+
         cam_x = pac_x - cam_distance * math.cos(math.radians(pacman_angle ))
         cam_y = pac_y - cam_distance * math.sin(math.radians(pacman_angle ))
         cam_z = cam_height
